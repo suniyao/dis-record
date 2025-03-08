@@ -32,6 +32,9 @@ module.exports = {
     const activities = member.presence?.activities || [];
     let activityMessage = '';
     let spotifyMessage = '';
+    let spotifySongName = '';
+    let spotifySongComposer = '';
+    let spotifyAlbumCoverURL = '';
     let customStatusMessage = '';
     let activityType = null; // Store type of activity
 
@@ -46,7 +49,10 @@ module.exports = {
 
       // Detect Spotify
       if (activity.name === 'Spotify' && activity.type === 2) {
-        spotifyMessage = `Listening to ${activity.details} by ${activity.state}\n Album: ${activity.assets?.largeText}`;
+        spotifySongName = activity.details;
+        spotifySongComposer = activity.state;
+        spotifyAlbumCoverURL = activity.assets?.largeImageURL();
+        spotifyMessage = `Listening to **${spotifySongName}** by **${spotifySongComposer}**\nAlbum URL: ${spotifyAlbumCoverURL}`;
       }
 
       // Detect Custom Status
@@ -72,7 +78,10 @@ module.exports = {
         status: status,
         activityType: activityType,
         activityMessage: activityMessage,
-        spotifyMessage: spotifyMessage,
+        // spotifyMessage: spotifyMessage,
+        spotifySongName: spotifySongName,
+        spotifySongComposer: spotifySongComposer,
+        spotifyAlbumCoverURL: spotifyAlbumCoverURL,
         customStatusMessage: customStatusMessage,
         timestamps: new Date()
       });

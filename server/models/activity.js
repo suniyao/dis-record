@@ -5,7 +5,10 @@ const ActivitySchema = new mongoose.Schema({
     status: { type: String, required: true },
     activityType: { type: Number, required: false }, 
     activityMessage: { type: String, required: false },
-    spotifyMessage: { type: String, required: false },
+    spotifySongName: { type: String, required: false },
+    spotifySongComposer: { type: String, required: false },
+    spotifyAlbumCoverURL: { type: String, required: false }, 
+    // spotifyMessage: { type: String, required: false },
     customStatusMessage: { type: String, required: false },
 }, { timestamps: true }); // Add timestamps correctly
 
