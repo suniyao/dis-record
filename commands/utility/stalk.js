@@ -35,6 +35,7 @@ module.exports = {
     let spotifySongName = '';
     let spotifySongComposer = '';
     let spotifyAlbumCoverURL = '';
+    let customStatus = '';
     let customStatusMessage = '';
     let activityType = null; // Store type of activity
 
@@ -43,7 +44,7 @@ module.exports = {
 
       // if (activity.type === 0) activityMessage += `Playing ${activity.name}\n`;
       // if (activity.type === 1) activityMessage += `Streaming ${activity.name}\n`;
-      if (activity.type === 2) activityMessage += `Listening to ${activity.name}\n`;
+      if (activity.type === 2) activityMessage += `Listening to ${activity.name}`;
       // if (activity.type === 3) activityMessage += `Watching ${activity.name}\n`;
       // if (activity.type === 5) activityMessage += `Competing in ${activity.name}\n`;
 
@@ -57,7 +58,8 @@ module.exports = {
 
       // Detect Custom Status
       if (activity.type === 4) {
-        customStatusMessage = `Custom status: ${activity.state || 'No text'}`;
+        customStatus = activity.state;
+        customStatusMessage = `Custom status: ${customStatus || 'No text'}`;
       }
     });
 
@@ -82,7 +84,7 @@ module.exports = {
         spotifySongName: spotifySongName,
         spotifySongComposer: spotifySongComposer,
         spotifyAlbumCoverURL: spotifyAlbumCoverURL,
-        customStatusMessage: customStatusMessage,
+        customStatus: customStatus,
         timestamps: new Date()
       });
 

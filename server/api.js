@@ -13,7 +13,7 @@ router.get("/activity", async (req, res) => {
 
 router.post("/activity", async (req, res) => {
     try {
-        const { name, status, activityType, activityMessage, spotifySongName, spotifySongComposer, spotifyAlbumCoverURL, customStatusMessage } = req.body;
+        const { name, status, activityType, activityMessage, spotifySongName, spotifySongComposer, spotifyAlbumCoverURL, customStatus } = req.body;
         
         const newActivity = new Activity({
             name,
@@ -23,7 +23,7 @@ router.post("/activity", async (req, res) => {
             spotifySongName,
             spotifySongComposer,
             spotifyAlbumCoverURL,
-            customStatusMessage
+            customStatus
         });
 
         await newActivity.save();
