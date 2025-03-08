@@ -1,7 +1,16 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
-const { token } = require('./config.json');
+const mongoose = require('mongoose'); // Import Mongoose
+const { token, mongoConnectionURL, databaseName } = require('./config.json'); // Store MongoDB credentials in config.json
+
+// Connect to MongoDB
+mongoose.connect(mongoConnectionURL, {
+	useNewUrlParser: true,
+	useUnifiedTopology: true,
+	dbName: databaseName,
+}).then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.log(`MongoDB Connection Error: ${err}`));
 
 const client = new Client({
 	intents: [
@@ -48,10 +57,11 @@ client.on(Events.InteractionCreate, async interaction => {
 		await command.execute(interaction);
 	} catch (error) {
 		console.error(error);
+		const errorMessage = 'There was an error while executing this command!';
 		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+			await interaction.followUp({ content: errorMessage, flags: MessageFlags.Ephemeral });
 		} else {
-			await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+			await interaction.reply({ content: errorMessage, flags: MessageFlags.Ephemeral });
 		}
 	}
 });

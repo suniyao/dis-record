@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 
 const ActivitySchema = new mongoose.Schema({
-    timestamps: true,
-    name: String,
-    status: String,
-    activityType: Number,
-    activityMessage: String,
-    spotifyMessage: String,
-    customStatusMessage: String,
-});
+    name: { type: String, required: true },
+    status: { type: String, required: true },
+    activityType: { type: Number, required: false }, 
+    activityMessage: { type: String, required: false },
+    spotifyMessage: { type: String, required: false },
+    customStatusMessage: { type: String, required: false },
+}, { timestamps: true }); // Add timestamps correctly
 
-module.exports = mongoose.model("activity", ActivitySchema);
+module.exports = mongoose.model("Activity", ActivitySchema);

@@ -1,4 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
+const mongoose = require('mongoose');
+const Activity = require('../../server/models/activity'); // Import the Mongoose model
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,33 +33,54 @@ module.exports = {
     let activityMessage = '';
     let spotifyMessage = '';
     let customStatusMessage = '';
+    let activityType = null; // Store type of activity
 
     activities.forEach(activity => {
-      if (activity.type === 0) activityMessage += `🎮 Playing **${activity.name}**\n`;
-      if (activity.type === 1) activityMessage += `📺 Streaming **${activity.name}**\n`;
-      if (activity.type === 2) activityMessage += `🎶 Listening to **${activity.name}**\n`;
-      if (activity.type === 3) activityMessage += `📖 Watching **${activity.name}**\n`;
-      if (activity.type === 5) activityMessage += `💻 Competing in **${activity.name}**\n`;
+      activityType = activity.type; // Store activity type
+
+      // if (activity.type === 0) activityMessage += `Playing ${activity.name}\n`;
+      // if (activity.type === 1) activityMessage += `Streaming ${activity.name}\n`;
+      if (activity.type === 2) activityMessage += `Listening to ${activity.name}\n`;
+      // if (activity.type === 3) activityMessage += `Watching ${activity.name}\n`;
+      // if (activity.type === 5) activityMessage += `Competing in ${activity.name}\n`;
 
       // Detect Spotify
       if (activity.name === 'Spotify' && activity.type === 2) {
-        spotifyMessage = `🎵 Listening to **${activity.details}** by **${activity.state}**\n⏳ Album: **${activity.assets?.largeText}**`;
+        spotifyMessage = `Listening to ${activity.details} by ${activity.state}\n Album: ${activity.assets?.largeText}`;
       }
 
       // Detect Custom Status
       if (activity.type === 4) {
-        customStatusMessage = `💬 Custom status: **${activity.state || 'No text'}**`;
+        customStatusMessage = `Custom status: ${activity.state || 'No text'}`;
       }
     });
 
-    // Final message construction
+    // Construct final message
     const finalMessage = [
-      `**${targetUser.tag}'s Status:** **${status}**`,
+      `${targetUser.tag}'s Status: ${status}`,
       activityMessage || 'No activity detected.',
       spotifyMessage,
       customStatusMessage
     ].filter(Boolean).join('\n');
 
     await interaction.reply(finalMessage);
+
+    // Store the activity in MongoDB
+    try {
+      const newActivity = new Activity({
+        name: targetUser.tag,
+        status: status,
+        activityType: activityType,
+        activityMessage: activityMessage,
+        spotifyMessage: spotifyMessage,
+        customStatusMessage: customStatusMessage,
+        timestamps: new Date()
+      });
+
+      await newActivity.save();
+      console.log(`[DB] Saved activity for ${targetUser.tag}`);
+    } catch (error) {
+      console.error("[DB Error] Failed to save activity:", error);
+    }
   },
 };

@@ -1,14 +1,34 @@
-const mongoose = require("mongoose");
-
+const express = require("express");
+const router = express.Router();
 const Activity = require("./models/activity");
 
-router.get("/activity", (req, res) => {
-    Activity.find({}).then((activities) => res.send(activities));
-})
+router.get("/activity", async (req, res) => {
+    try {
+        const activities = await Activity.find({});
+        res.status(200).json(activities);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching activities", error });
+    }
+});
 
-router.post("/activity", (req, res) => {
-    const newActivity = new Activity ({
+router.post("/activity", async (req, res) => {
+    try {
+        const { name, status, activityType, activityMessage, spotifyMessage, customStatusMessage } = req.body;
+        
+        const newActivity = new Activity({
+            name,
+            status,
+            activityType,
+            activityMessage,
+            spotifyMessage,
+            customStatusMessage
+        });
 
-    });
-    newActivity.save().then((activity) => res.send(activity));
-})
+        await newActivity.save();
+        res.status(201).json(newActivity);
+    } catch (error) {
+        res.status(500).json({ message: "Error saving activity", error });
+    }
+});
+
+module.exports = router;
