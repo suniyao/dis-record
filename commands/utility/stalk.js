@@ -1,97 +1,89 @@
-const { SlashCommandBuilder } = require('discord.js');
 const mongoose = require('mongoose');
-const Activity = require('../../server/models/activity'); // Import the Mongoose model
+const Activity = require('../../server/models/activity'); // Import Mongoose model
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('activity')
-    .setDescription('Check what a user is doing (playing, listening, etc.)')
-    .addUserOption(option => 
-      option.setName('target')
-        .setDescription('The user to check')
-        .setRequired(true)
-    ),
-  async execute(interaction) {
-    const targetUser = interaction.options.getUser('target');
+    data: {
+        name: 'activity',
+        description: 'Check what a user is doing (playing, listening, etc hihihiiihihi.)',
+        integration_type: [0, 1],
+        contexts: [0, 1, 2],
+        options: [
+            {
+                type: 6, // USER type
+                name: 'target',
+                description: 'The user to check',
+                required: true
+            }
+        ]
+    },
+    async execute(interaction) {
+        const targetUser = interaction.options.getUser('target');
 
-    if (!interaction.guild) {
-      return interaction.reply({ content: 'This command only works in servers.', ephemeral: true });
+        let member;
+        if (interaction.guild) {
+            member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+        }
+
+        if (!member) {
+            targetUser = await interaction.client.users.fetch(targetUser.id).catch(() => null);
+            if (!targetUser) {
+                return interaction.reply({ content: 'User not found.', ephemeral: true });
+            }
+        }
+
+        const status = member?.presence?.status || 'offline';
+        const activities = member?.presence?.activities || [];
+
+        let activityMessage = '';
+        let spotifyMessage = '';
+        let spotifySongName = '';
+        let spotifySongComposer = '';
+        let spotifyAlbumCoverURL = '';
+        let customStatusMessage = '';
+        let activityType = null;
+
+        activities.forEach(activity => {
+            activityType = activity.type;
+
+            if (activity.type === 2) activityMessage += `Listening to ${activity.name}`;
+
+            if (activity.name === 'Spotify' && activity.type === 2) {
+                spotifySongName = activity.details;
+                spotifySongComposer = activity.state;
+                spotifyAlbumCoverURL = activity.assets?.largeImageURL();
+                spotifyMessage = `🎵 Listening to **${spotifySongName}** by **${spotifySongComposer}**\n📀 Album Cover: ${spotifyAlbumCoverURL}`;
+            }
+
+            if (activity.type === 4) {
+                customStatusMessage = `💬 Custom status: ${activity.state || 'No text'}`;
+            }
+        });
+
+        const finalMessage = [
+            `**${targetUser.tag}'s Status:** **${status}**`,
+            activityMessage || 'No activity detected.',
+            spotifyMessage,
+            customStatusMessage
+        ].filter(Boolean).join('\n');
+
+        await interaction.reply(finalMessage);
+
+        try {
+            const newActivity = new Activity({
+                name: targetUser.tag,
+                status: status,
+                activityType: activityType,
+                activityMessage: activityMessage,
+                spotifySongName: spotifySongName,
+                spotifySongComposer: spotifySongComposer,
+                spotifyAlbumCoverURL: spotifyAlbumCoverURL,
+                timestamps: new Date()
+            });
+
+            await newActivity.save();
+            console.log(`[DB] Saved activity for ${targetUser.tag}`);
+        } catch (error) {
+            console.error("[DB Error] Failed to save activity:", error);
+        }
     }
-
-    // Fetch member safely
-    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-
-    if (!member) {
-      return interaction.reply({ content: 'User not found in this server.', ephemeral: true });
-    }
-
-    // Get presence status safely
-    const status = member.presence ? member.presence.status : 'offline';
-
-    // Get user's activity (e.g., Playing, Streaming, Listening, etc.)
-    const activities = member.presence?.activities || [];
-    let activityMessage = '';
-    let spotifyMessage = '';
-    let spotifySongName = '';
-    let spotifySongComposer = '';
-    let spotifyAlbumCoverURL = '';
-    let customStatus = '';
-    let customStatusMessage = '';
-    let activityType = null; // Store type of activity
-
-    activities.forEach(activity => {
-      activityType = activity.type; // Store activity type
-
-      // if (activity.type === 0) activityMessage += `Playing ${activity.name}\n`;
-      // if (activity.type === 1) activityMessage += `Streaming ${activity.name}\n`;
-      if (activity.type === 2) activityMessage += `Listening to ${activity.name}`;
-      // if (activity.type === 3) activityMessage += `Watching ${activity.name}\n`;
-      // if (activity.type === 5) activityMessage += `Competing in ${activity.name}\n`;
-
-      // Detect Spotify
-      if (activity.name === 'Spotify' && activity.type === 2) {
-        spotifySongName = activity.details;
-        spotifySongComposer = activity.state;
-        spotifyAlbumCoverURL = activity.assets?.largeImageURL();
-        spotifyMessage = `Listening to **${spotifySongName}** by **${spotifySongComposer}**\nAlbum URL: ${spotifyAlbumCoverURL}`;
-      }
-
-      // Detect Custom Status
-      if (activity.type === 4) {
-        customStatus = activity.state;
-        customStatusMessage = `Custom status: ${customStatus || 'No text'}`;
-      }
-    });
-
-    // Construct final message
-    const finalMessage = [
-      `${targetUser.tag}'s Status: ${status}`,
-      activityMessage || 'No activity detected.',
-      spotifyMessage,
-      customStatusMessage
-    ].filter(Boolean).join('\n');
-
-    await interaction.reply(finalMessage);
-
-    // Store the activity in MongoDB
-    try {
-      const newActivity = new Activity({
-        name: targetUser.tag,
-        status: status,
-        activityType: activityType,
-        activityMessage: activityMessage,
-        // spotifyMessage: spotifyMessage,
-        spotifySongName: spotifySongName,
-        spotifySongComposer: spotifySongComposer,
-        spotifyAlbumCoverURL: spotifyAlbumCoverURL,
-        customStatus: customStatus,
-        timestamps: new Date()
-      });
-
-      await newActivity.save();
-      console.log(`[DB] Saved activity for ${targetUser.tag}`);
-    } catch (error) {
-      console.error("[DB Error] Failed to save activity:", error);
-    }
-  },
 };
